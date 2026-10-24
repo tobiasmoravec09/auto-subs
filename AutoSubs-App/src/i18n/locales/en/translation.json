@@ -209,6 +209,14 @@
       "characters": "Characters",
       "words": "Words",
       "charsShort": "{{count}} chars"
+    },
+    "referenceVideo": {
+      "title": "Reference Video",
+      "analyzeButton": "Extract Style & Colors",
+      "analyzing": "Extracting styles & colors...",
+      "reanalyze": "Re-analyze Reference Video",
+      "analysisSuccess": "Styles successfully extracted from reference video!",
+      "analysisError": "Failed to extract styles from video"
     }
   },
   "speakerEditor": {

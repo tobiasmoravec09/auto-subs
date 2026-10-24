@@ -78,6 +78,9 @@ export const DEFAULT_SETTINGS: Settings = {
 
   // Caption style
   captionStyle: { source: "autosubs", presetId: DEFAULT_PRESET_ID },
+
+  // Reference video style transfer
+  referenceVideoPath: null,
 };
 
 // ─── Persisted-shape normalisation ────────────────────────────────────────

@@ -23,6 +23,7 @@ import {
   TimelineTrackSelector,
   formatLocalizedTrackNumber,
 } from "./source-section";
+import { ReferenceVideoSection } from "./reference-video-section";
 import type { Integration } from "@/contexts/IntegrationContext";
 import { LanguageButton } from "./language-button";
 import { FormatRow } from "./format-row";
@@ -286,6 +287,17 @@ export function TranscriptionPanelView({
                       />
                     </div>
                   </div>
+
+                  {/* Reference Video Section (1.5) - Style Transfer */}
+                  <Card className="z-50 overflow-hidden rounded-2xl bg-background p-0 shadow-none">
+                    <CompactSettingsRow
+                      number={formatSectionNumber(1.5)}
+                      label={t("referenceVideo.title", "Reference Video")}
+                      className="border-b"
+                    >
+                      <ReferenceVideoSection />
+                    </CompactSettingsRow>
+                  </Card>
 
                   <Card className="z-50 overflow-hidden rounded-2xl bg-background p-0 shadow-none">
                     <CompactSettingsRow

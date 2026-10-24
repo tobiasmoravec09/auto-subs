@@ -1,0 +1,123 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch: # Manual trigger
+
+env:
+  TAURI_VERSION: "2"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Windows (Tauri)
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: AutoSubs-App/package-lock.json
+
+      # 3. Setup Rust
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+
+      # 4. Cache cargo dependencies
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: AutoSubs-App/src-tauri -> target
+          key: cargo-${{ runner.os }}-${{ hashFiles('AutoSubs-App/src-tauri/Cargo.lock') }}
+
+      # 5. Install system dependencies (for Tauri)
+      - name: Install system dependencies
+        run: |
+          # Windows dependencies for Tauri v2
+          # WebView2 is pre-installed on windows-latest
+
+      # 6. Install frontend dependencies
+      - name: Install frontend dependencies
+        working-directory: AutoSubs-App
+        run: npm ci
+
+      # 7. Build frontend
+      - name: Build frontend
+        working-directory: AutoSubs-App
+        run: npm run build:web
+
+      # 8. Build Tauri app
+      - name: Build Tauri app
+        working-directory: AutoSubs-App
+        env:
+          # Windows-specific Tauri build config
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
+        run: npm run build:win
+
+      # 9. Upload artifacts
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoSubs-Windows-Installer
+          path: |
+            AutoSubs-App/src-tauri/target/release/bundle/nsis/*.exe
+            AutoSubs-App/src-tauri/target/release/bundle/msi/*.msi
+          retention-days: 30
+
+      # 10. Upload portable executable
+      - name: Upload portable executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoSubs-Windows-Portable
+          path: AutoSubs-App/src-tauri/target/release/autosubs.exe
+          retention-days: 30
+
+  # Optional: Create release on tag push
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows installer
+        uses: actions/download-artifact@v4
+        with:
+          name: AutoSubs-Windows-Installer
+          path: dist/windows
+
+      - name: Download portable exe
+        uses: actions/download-artifact@v4
+        with:
+          name: AutoSubs-Windows-Portable
+          path: dist/portable
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/windows/*.exe
+            dist/windows/*.msi
+            dist/portable/*.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: false

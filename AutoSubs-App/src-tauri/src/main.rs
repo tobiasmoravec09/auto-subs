@@ -32,6 +32,7 @@ mod resolve_bridge;
 mod resolve_scripts;
 mod adobe_bridge;
 mod cli;
+mod style_analysis;
 #[cfg(target_os = "macos")]
 
 // Include integration-like tests that need crate visibility
@@ -679,6 +680,7 @@ fn main() {
             transcription_api::cancel_transcription,
             transcription_api::reformat_subtitles,
             transcription_api::density_char_limits,
+            transcription_api::analyze_reference_video,
             models::get_downloaded_models,
             models::delete_model,
             logging::get_backend_logs,

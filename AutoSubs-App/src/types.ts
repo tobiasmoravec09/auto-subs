@@ -183,6 +183,18 @@ export interface Settings {
 
     // Caption style: which of the two kinds of caption to send, and which one.
     captionStyle: CaptionStyle;
+
+    // Reference video style transfer
+    referenceVideoPath: string | null;
+}
+
+export interface ExtractedStyle {
+    fillColor?: string;
+    outlineColor?: string;
+    shadowColor?: string;
+    position?: [number, number, number];
+    textSize?: number;
+    speakerColors?: Record<string, string>;
 }
 
 /**

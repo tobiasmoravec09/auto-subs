@@ -1,0 +1,102 @@
+name: Build Linux
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  TAURI_VERSION: "2"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Linux (Tauri)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: AutoSubs-App/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+          components: rustfmt, clippy
+
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: AutoSubs-App/src-tauri -> target
+          key: cargo-${{ runner.os }}-${{ hashFiles('AutoSubs-App/src-tauri/Cargo.lock') }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libgtk-3-dev \
+            libssl-dev \
+            libsqlite3-dev \
+            libappindicator3-dev \
+            libsoup2.4-dev \
+            libjavascriptcoregtk-4.1-dev \
+            patchelf \
+            webkit2gtk-4.1 \
+            curl \
+            wget \
+            file \
+            libudev-dev \
+            libglib2.0-dev \
+            libcairo2-dev \
+            libpango1.0-dev \
+            libatk1.0-dev \
+            libgdk-pixbuf2.0-dev
+
+      - name: Install frontend dependencies
+        working-directory: AutoSubs-App
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: AutoSubs-App
+        run: npm run build:web
+
+      - name: Build Tauri app
+        working-directory: AutoSubs-App
+        run: npm run build:linux
+
+      - name: Upload Linux AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoSubs-Linux-AppImage
+          path: AutoSubs-App/src-tauri/target/release/bundle/appimage/*.AppImage
+          retention-days: 30
+
+      - name: Upload Linux deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoSubs-Linux-Deb
+          path: AutoSubs-App/src-tauri/target/release/bundle/deb/*.deb
+          retention-days: 30
+
+      - name: Upload portable executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoSubs-Linux-Portable
+          path: AutoSubs-App/src-tauri/target/release/autosubs
+          retention-days: 30

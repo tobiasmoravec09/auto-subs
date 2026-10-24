@@ -1,5 +1,6 @@
 use crate::audio_preprocess as audio;
 use crate::models::get_cache_dir;
+use crate::style_analysis::analyze_reference_video_internal;
 use crate::transcript_types::{ColorModifier, Sample, Segment, Speaker, Transcript, WordTimestamp};
 use dirs;
 use eyre::Result;
@@ -14,6 +15,19 @@ use transcription_engine::{
     Callbacks, CensorStyle, ContentFormatting, DiarizeBackend, Engine, EngineConfig, LabeledProgressFn, PostProcessConfig, ProgressType, SegmentStage,
     Segment as WDSegment, TextCase, TextDensity, TranscribeOptions, process_segments,
 };
+
+/// Response for reference video style analysis
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferenceVideoAnalysisResult {
+    pub fill_color: Option<String>,
+    pub outline_color: Option<String>,
+    pub shadow_color: Option<String>,
+    pub position: Option<[f64; 3]>,
+    pub text_size: Option<f64>,
+    pub speaker_colors: Option<std::collections::HashMap<String, String>>,
+    pub detected_frames: usize,
+}
 
 // Frontend-compatible progress data type
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -910,6 +924,23 @@ pub struct DensityCharLimits {
     pub less: usize,
     pub standard: usize,
     pub more: usize,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalyzeReferenceVideoRequest {
+    pub video_path: String,
+}
+
+#[command]
+pub async fn analyze_reference_video<R: Runtime>(
+    app: AppHandle<R>,
+    request: AnalyzeReferenceVideoRequest,
+) -> Result<ReferenceVideoAnalysisResult, String> {
+    tracing::info!("Analyzing reference video: {}", request.video_path);
+
+    // Call the real implementation
+    analyze_reference_video_internal(app, &request.video_path).await
 }
 
 /// Max characters per line each density preset resolves to for `lang`
