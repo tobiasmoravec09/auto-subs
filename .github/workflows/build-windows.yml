@@ -63,6 +63,10 @@ jobs:
         working-directory: AutoSubs-App
         run: npm run build:web
 
+      - name: Install rimraf
+        run: npm install -g rimraf
+
+
       # 8. Build Tauri app
       - name: Build Tauri app
         working-directory: AutoSubs-App
